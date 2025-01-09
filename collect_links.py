@@ -213,7 +213,8 @@ class CollectLinks:
                 is_scroll_end = scroll_info['scrollTop'] + scroll_info['clientHeight'] >= scroll_info['scrollHeight']
                 if is_scroll_end :
                     time.sleep(2)
-                    self.wait_and_click('//button[@class="Button_button__RDDf5 spacing_noMargin__F5u9R spacing_pr30__J0kZ7 spacing_pl30__01iHm Grid_loadMore__hTWju Button_clickable__DqoNe Button_color-white__Wmgol"]')
+                    elem.send_keys(Keys.PAGE_UP)
+                    #self.wait_and_click('//button[@class="Button_button__RDDf5 spacing_noMargin__F5u9R spacing_pr30__J0kZ7 spacing_pl30__01iHm Grid_loadMore__hTWju Button_clickable__DqoNe Button_color-white__Wmgol"]')
 
         imgs = self.browser.find_elements(By.XPATH, '//a//img[@class="spacing_noMargin__F5u9R"]')
 

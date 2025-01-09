@@ -11,6 +11,8 @@ Google, Naver multiprocess image crawler (High Quality & Speed & Customizable)
 
 3. Write search keywords in keywords.txt
 
+3.1. 这里需要启动一个谷歌驱动，在启动的时候将参数贴入
+
 4. **Run "main.py"**
 
 5. Files will be downloaded to 'download' directory.
