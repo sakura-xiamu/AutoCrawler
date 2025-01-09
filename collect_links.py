@@ -89,7 +89,8 @@ class CollectLinks:
         return list(dict.fromkeys(_list))
 
     def google(self, keyword, add_url=""):
-        self.browser.get("https://www.google.com/search?q={}&source=lnms&tbm=isch{}".format(keyword, add_url))
+        #self.browser.get("https://www.google.com/search?q={}&source=lnms&tbm=isch{}".format(keyword, add_url))
+        self.browser.get("https://www.google.com/search?q={}&source=lnms&udm=2&tbs=isz:l".format(keyword, add_url))
 
         time.sleep(1)
 
@@ -117,7 +118,7 @@ class CollectLinks:
 
         print('Scraping links')
 
-        imgs = self.browser.find_elements(By.XPATH, '//div[@jsname="dTDiAc"]/div[@jsname="qQjpJ"]//img')
+        imgs = self.browser.find_elements(By.XPATH, '//*[@class="YQ4gaf"]')
 
         links = []
         for idx, img in enumerate(imgs):
@@ -170,6 +171,71 @@ class CollectLinks:
 
         return links
 
+    def pexels(self, keyword, add_url=""):
+        self.browser.get(
+            "https://www.pexels.com/search/{}{}".format(keyword, add_url))
+
+        time.sleep(1)
+
+        print('Scrolling down')
+
+        elem = self.browser.find_element(By.TAG_NAME, "body")
+
+        for i in range(200):
+            elem.send_keys(Keys.PAGE_DOWN)
+            time.sleep(1)
+            #if i % 2 == 0 :
+                #elem.send_keys(Keys.PAGE_UP)
+
+            # 执行 JavaScript 获取页面滚动信息
+            scroll_info = self.browser.execute_script(
+                "return {"
+                "    scrollTop: document.documentElement.scrollTop || document.body.scrollTop,"
+                "    clientHeight: document.documentElement.clientHeight || window.innerHeight,"
+                "    scrollHeight: document.documentElement.scrollHeight || document.body.scrollHeight"
+                "};"
+            )
+            # 判断是否到底部
+            is_scroll_end = scroll_info['scrollTop'] + scroll_info['clientHeight'] >= scroll_info['scrollHeight']
+            # 判断是否到底部
+            if is_scroll_end :
+                print("已经滚动到底部")
+                elem.send_keys(Keys.PAGE_UP)
+                # 执行 JavaScript 获取页面滚动信息
+                scroll_info = self.browser.execute_script(
+                    "return {"
+                    "    scrollTop: document.documentElement.scrollTop || document.body.scrollTop,"
+                    "    clientHeight: document.documentElement.clientHeight || window.innerHeight,"
+                    "    scrollHeight: document.documentElement.scrollHeight || document.body.scrollHeight"
+                    "};"
+                )
+                # 判断是否到底部
+                is_scroll_end = scroll_info['scrollTop'] + scroll_info['clientHeight'] >= scroll_info['scrollHeight']
+                if is_scroll_end :
+                    time.sleep(2)
+                    self.wait_and_click('//button[@class="Button_button__RDDf5 spacing_noMargin__F5u9R spacing_pr30__J0kZ7 spacing_pl30__01iHm Grid_loadMore__hTWju Button_clickable__DqoNe Button_color-white__Wmgol"]')
+
+        imgs = self.browser.find_elements(By.XPATH, '//a//img[@class="spacing_noMargin__F5u9R"]')
+
+        print('Scraping links')
+
+        links = []
+
+        for img in imgs:
+            try:
+                src = img.get_attribute("src")
+                if src[0] != 'd':
+                    links.append(src)
+            except Exception as e:
+                print('[Exception occurred while collecting links from pexels] {}'.format(e))
+
+        links = self.remove_duplicates(links)
+
+        print('Collect links done. Site: {}, Keyword: {}, Total: {}'.format('pexels', keyword, len(links)))
+        self.browser.close()
+
+        return links
+
     def google_full(self, keyword, add_url="", limit=100):
         print('[Full Resolution Mode]')
 
@@ -177,7 +243,7 @@ class CollectLinks:
         time.sleep(1)
 
         # Click the first image to get full resolution images
-        self.wait_and_click('//div[@jsname="dTDiAc"]')
+        self.wait_and_click('//*[@class="YQ4gaf"]')
         time.sleep(1)
 
         body = self.browser.find_element(By.TAG_NAME, "body")
@@ -266,12 +332,13 @@ class CollectLinks:
 
         while True:
             try:
-                xpath = '//img[@class="_fe_image_viewer_image_fallback_target"]'
+                xpath = '//img[@class="_fe_image_viewer_image_fallback_target _fe_image_viewer_main_image"]'
                 imgs = self.browser.find_elements(By.XPATH, xpath)
 
                 for img in imgs:
                     self.highlight(img)
                     src = img.get_attribute('src')
+                    print('图片src={}'.format(src))
 
                     if src not in links and src is not None:
                         links.append(src)
@@ -303,8 +370,61 @@ class CollectLinks:
 
         return links
 
+    def pexels_full(self, keyword, add_url=""):
+        self.browser.get(
+            "https://www.pexels.com/search/{}{}".format(keyword, add_url))
+
+        time.sleep(1)
+
+        print('Scrolling down')
+
+        elem = self.browser.find_element(By.TAG_NAME, "body")
+
+        for i in range(200):
+            elem.send_keys(Keys.PAGE_DOWN)
+            time.sleep(1)
+            if i % 2 == 0 :
+                elem.send_keys(Keys.PAGE_UP)
+
+            # 执行 JavaScript 获取页面滚动信息
+            scroll_info = self.browser.execute_script(
+                "return {"
+                "    scrollTop: document.documentElement.scrollTop || document.body.scrollTop,"
+                "    clientHeight: document.documentElement.clientHeight || window.innerHeight,"
+                "    scrollHeight: document.documentElement.scrollHeight || document.body.scrollHeight"
+                "};"
+            )
+            # 判断是否到底部
+            is_scroll_end = scroll_info['scrollTop'] + scroll_info['clientHeight'] >= scroll_info['scrollHeight']
+            # 判断是否到底部
+            if is_scroll_end :
+                print("已经滚动到底部")
+                time.sleep(2)
+                self.wait_and_click('//button[@class="Button_button__RDDf5 spacing_noMargin__F5u9R spacing_pr30__J0kZ7 spacing_pl30__01iHm Grid_loadMore__hTWju Button_clickable__DqoNe Button_color-white__Wmgol"]')
+
+        imgs = self.browser.find_elements(By.XPATH, '//a//img[@class="spacing_noMargin__F5u9R"]')
+
+        print('Scraping links')
+
+        links = []
+
+        for img in imgs:
+            try:
+                src = img.get_attribute("src")
+                if src[0] != 'd':
+                    links.append(src)
+            except Exception as e:
+                print('[Exception occurred while collecting links from pexels] {}'.format(e))
+
+        links = self.remove_duplicates(links)
+
+        print('Collect links done. Site: {}, Keyword: {}, Total: {}'.format('pexels', keyword, len(links)))
+        self.browser.close()
+
+        return links
+
 
 if __name__ == '__main__':
     collect = CollectLinks()
-    links = collect.naver_full('박보영')
+    links = collect.pexels('Teacher monitoring computer-based test')
     print(len(links), links)
