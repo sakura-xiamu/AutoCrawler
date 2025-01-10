@@ -257,11 +257,12 @@ class CollectLinks:
 
         elem = self.browser.find_element(By.TAG_NAME, "body")
 
+        count = 0
         for i in range(200):
             elem.send_keys(Keys.PAGE_DOWN)
             time.sleep(1)
-            #if i % 2 == 0 :
-                #elem.send_keys(Keys.PAGE_UP)
+            if i % 3 == 0 :
+                elem.send_keys(Keys.PAGE_UP)
 
             # 执行 JavaScript 获取页面滚动信息
             scroll_info = self.browser.execute_script(
@@ -290,6 +291,10 @@ class CollectLinks:
                 if is_scroll_end :
                     time.sleep(2)
                     elem.send_keys(Keys.PAGE_UP)
+
+                    count += 0
+                    if count > 5:
+                        break
                     #self.wait_and_click('//button[@class="Button_button__RDDf5 spacing_noMargin__F5u9R spacing_pr30__J0kZ7 spacing_pl30__01iHm Grid_loadMore__hTWju Button_clickable__DqoNe Button_color-white__Wmgol"]')
 
         imgs = self.browser.find_elements(By.XPATH, '//a//img[@class="spacing_noMargin__F5u9R"]')
@@ -522,6 +527,9 @@ class CollectLinks:
             time.sleep(1)
             if i % 2 == 0 :
                 elem.send_keys(Keys.PAGE_UP)
+            if i % 10 == 0 :
+                for j in range(10):
+                    elem.send_keys(Keys.PAGE_UP)
 
             # 执行 JavaScript 获取页面滚动信息
             scroll_info = self.browser.execute_script(
@@ -576,5 +584,5 @@ class CollectLinks:
 
 if __name__ == '__main__':
     collect = CollectLinks()
-    links = collect.bing('People watching phone screen')
+    links = collect.pexels('People watching phone screen')
     print(len(links), links)

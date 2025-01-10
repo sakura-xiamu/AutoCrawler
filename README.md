@@ -17,6 +17,7 @@ Google, Naver multiprocess image crawler (High Quality & Speed & Customizable)
 
 5. Files will be downloaded to 'download' directory.
 
+6. python main.py --google=false --naver=false --bing=false
 
 # Arguments
 usage:
