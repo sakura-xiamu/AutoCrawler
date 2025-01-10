@@ -39,7 +39,8 @@ class CollectLinks:
         if proxy:
             chrome_options.add_argument("--proxy-server={}".format(proxy))
         self.browser = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=chrome_options)
-
+        self.filter = LinkFilter()
+        
         browser_version = 'Failed to detect version'
         chromedriver_version = 'Failed to detect version'
         major_version_different = False
@@ -137,7 +138,9 @@ class CollectLinks:
         print('Collect links done. Site: {}, Keyword: {}, Total: {}'.format('google', keyword, len(links)))
         self.browser.close()
 
-        return links
+        filter = LinkFilter()
+        filtered_links = filter.filter_links(links)
+        return filtered_links
 
     def naver(self, keyword, add_url=""):
         self.browser.get(
@@ -172,7 +175,9 @@ class CollectLinks:
         print('Collect links done. Site: {}, Keyword: {}, Total: {}'.format('naver', keyword, len(links)))
         self.browser.close()
 
-        return links
+        filter = LinkFilter()
+        filtered_links = filter.filter_links(links)
+        return filtered_links
 
     def bing(self, keyword, add_url=""):
         self.browser.get(
@@ -239,7 +244,8 @@ class CollectLinks:
         print('Collect links done. Site: {}, Keyword: {}, Total: {}'.format('bing', keyword, len(links)))
         self.browser.close()
 
-        return links
+        filtered_links = self.filter.filter_links(links)
+        return filtered_links
 
     def pexels(self, keyword, add_url=""):
         self.browser.get(
@@ -305,7 +311,8 @@ class CollectLinks:
         print('Collect links done. Site: {}, Keyword: {}, Total: {}'.format('pexels', keyword, len(links)))
         self.browser.close()
 
-        return links
+        filtered_links = self.filter.filter_links(links)
+        return filtered_links
 
     def google_full(self, keyword, add_url="", limit=100):
         print('[Full Resolution Mode]')
@@ -378,7 +385,9 @@ class CollectLinks:
         print('Collect links done. Site: {}, Keyword: {}, Total: {}'.format('google_full', keyword, len(links)))
         self.browser.close()
 
-        return links
+        filter = LinkFilter()
+        filtered_links = filter.filter_links(links)
+        return filtered_links
 
     def naver_full(self, keyword, add_url=""):
         print('[Full Resolution Mode]')
@@ -439,7 +448,9 @@ class CollectLinks:
         print('Collect links done. Site: {}, Keyword: {}, Total: {}'.format('naver_full', keyword, len(links)))
         self.browser.close()
 
-        return links
+        filter = LinkFilter()
+        filtered_links = filter.filter_links(links)
+        return filtered_links
 
     def bing_full(self, keyword, add_url=""):
         print('[Full Resolution Mode]')
@@ -457,9 +468,9 @@ class CollectLinks:
 
         links = []
 
-        for i in range(10):
+        for i in range(50):
             try:
-                for j in range(10):
+                for j in range(20):
                     elem.send_keys(Keys.PAGE_DOWN)
                     time.sleep(0.2)
 
@@ -547,7 +558,9 @@ class CollectLinks:
         print('Collect links done. Site: {}, Keyword: {}, Total: {}'.format('pexels', keyword, len(links)))
         self.browser.close()
 
-        return links
+        filter = LinkFilter()
+        filtered_links = filter.filter_links(links)
+        return filtered_links
 
     def is_scroll_end(self):
         scroll_info = self.browser.execute_script(
@@ -563,5 +576,5 @@ class CollectLinks:
 
 if __name__ == '__main__':
     collect = CollectLinks()
-    links = collect.bing_full('People watching phone screen')
+    links = collect.bing('People watching phone screen')
     print(len(links), links)
