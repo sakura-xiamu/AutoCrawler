@@ -26,6 +26,9 @@ from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
 import json
 
+from LinkFilter import LinkFilter
+
+
 class CollectLinks:
     def __init__(self, no_gui=False, proxy=None):
         chrome_options = Options()
@@ -445,59 +448,53 @@ class CollectLinks:
             "https://www.bing.com/images/search?first=1&q={}{}".format(keyword, add_url))
         time.sleep(1)
 
-        elem = self.browser.find_element(By.TAG_NAME, "body")
-
-        print('Scraping links')
-
         # Click the first image
-        self.wait_and_click('//div[@class="tile_item _fe_image_tab_content_tile"]//img[@class="_fe_image_tab_content_thumbnail_image"]')
+        self.wait_and_click('//a[@class="iusc"]')
         time.sleep(1)
 
+        elem = self.browser.find_element(By.XPATH, '//iframe[@id="OverlayIFrame"]')
+        print('Scraping links')
+
         links = []
-        count = 1
 
-        last_scroll = 0
-        scroll_patience = 0
-
-        while True:
+        for i in range(10):
             try:
-                xpath = '//img[@class="_fe_image_viewer_image_fallback_target _fe_image_viewer_main_image"]'
-                imgs = self.browser.find_elements(By.XPATH, xpath)
+                for j in range(10):
+                    elem.send_keys(Keys.PAGE_DOWN)
+                    time.sleep(0.2)
+
+                self.browser.switch_to.frame(elem)
+
+                imgs = self.browser.find_elements(By.XPATH, '//a[@class="richImgLnk"]')
+                print('iframe links {}'.format(len(imgs)))
 
                 for img in imgs:
-                    self.highlight(img)
-                    src = img.get_attribute('src')
-                    print('图片src={}'.format(src))
+                    try:
+                        attr_m = img.get_attribute("data-m")
+                        if attr_m:
+                            json_m = json.loads(attr_m)
+                            links.append(json_m['murl'])
+                    except Exception as e:
+                        print('[Exception occurred while collecting links from bing_full] {}'.format(e))
 
-                    if src not in links and src is not None:
-                        links.append(src)
-                        print('%d: %s' % (count, src))
-                        count += 1
+                time.sleep(1)
 
+                self.browser.switch_to.default_content()
+                elem.send_keys(Keys.ARROW_RIGHT)
             except StaleElementReferenceException:
                 # print('[Expected Exception - StaleElementReferenceException]')
                 pass
             except Exception as e:
                 print('[Exception occurred while collecting links from bing_full] {}'.format(e))
 
-            scroll = self.get_scroll()
-            if scroll == last_scroll:
-                scroll_patience += 1
-            else:
-                scroll_patience = 0
-                last_scroll = scroll
-
-            if scroll_patience >= 100:
-                break
-
-            elem.send_keys(Keys.RIGHT)
-
         links = self.remove_duplicates(links)
 
         print('Collect links done. Site: {}, Keyword: {}, Total: {}'.format('bing_full', keyword, len(links)))
         self.browser.close()
 
-        return links
+        filter = LinkFilter()
+        filtered_links = filter.filter_links(links)
+        return filtered_links
 
     def pexels_full(self, keyword, add_url=""):
         self.browser.get(
@@ -552,8 +549,19 @@ class CollectLinks:
 
         return links
 
+    def is_scroll_end(self):
+        scroll_info = self.browser.execute_script(
+            "return {"
+            "    scrollTop: document.documentElement.scrollTop || document.body.scrollTop,"
+            "    clientHeight: document.documentElement.clientHeight || window.innerHeight,"
+            "    scrollHeight: document.documentElement.scrollHeight || document.body.scrollHeight"
+            "};"
+        )
+        # 判断是否到底部
+        is_scroll_end = scroll_info['scrollTop'] + scroll_info['clientHeight'] >= scroll_info['scrollHeight']
+        return is_scroll_end
 
 if __name__ == '__main__':
     collect = CollectLinks()
-    links = collect.bing('People watching phone screen')
+    links = collect.bing_full('People watching phone screen')
     print(len(links), links)
