@@ -32,6 +32,10 @@ class Sites:
     NAVER = 2
     GOOGLE_FULL = 3
     NAVER_FULL = 4
+    BING = 5
+    BING_FULL = 6
+    PEXELS = 7
+    PEXELS_FULL = 8
 
     @staticmethod
     def get_text(code):
@@ -43,6 +47,14 @@ class Sites:
             return 'google'
         elif code == Sites.NAVER_FULL:
             return 'naver'
+        elif code == Sites.BING:
+            return 'bing'
+        elif code == Sites.BING_FULL:
+            return 'bing'
+        elif code == Sites.PEXELS:
+            return 'pexels'
+        elif code == Sites.PEXELS_FULL:
+            return 'pexels'
 
     @staticmethod
     def get_face_url(code):
@@ -50,10 +62,14 @@ class Sites:
             return "&tbs=itp:face"
         if code == Sites.NAVER or Sites.NAVER_FULL:
             return "&face=1"
+        if code == Sites.BING or Sites.BING_FULL:
+            return ""
+        if code == Sites.PEXELS or Sites.PEXELS_FULL:
+            return ""
 
 
 class AutoCrawler:
-    def __init__(self, skip_already_exist=True, n_threads=4, do_google=True, do_naver=True, download_path='download',
+    def __init__(self, skip_already_exist=True, n_threads=8, do_google=True, do_naver=True, do_bing=True, do_pexels=True, download_path='download',
                  full_resolution=False, face=False, no_gui=False, limit=0, proxy_list=None):
         """
         :param skip_already_exist: Skips keyword already downloaded before. This is needed when re-downloading.
@@ -72,6 +88,8 @@ class AutoCrawler:
         self.n_threads = n_threads
         self.do_google = do_google
         self.do_naver = do_naver
+        self.do_bing = do_bing
+        self.do_pexels = do_pexels
         self.download_path = download_path
         self.full_resolution = full_resolution
         self.face = face
@@ -240,11 +258,23 @@ class AutoCrawler:
             elif site_code == Sites.NAVER:
                 links = collect.naver(keyword, add_url)
 
+            elif site_code == Sites.BING:
+                links = collect.bing(keyword, add_url)
+
+            elif site_code == Sites.PEXELS:
+                links = collect.pexels(keyword, add_url)
+
             elif site_code == Sites.GOOGLE_FULL:
                 links = collect.google_full(keyword, add_url, self.limit)
 
             elif site_code == Sites.NAVER_FULL:
                 links = collect.naver_full(keyword, add_url)
+
+            elif site_code == Sites.BING_FULL:
+                links = collect.bing_full(keyword, add_url, self.limit)
+
+            elif site_code == Sites.PEXELS_FULL:
+                links = collect.pexels_full(keyword, add_url, self.limit)
 
             else:
                 print('Invalid Site Code')
@@ -275,7 +305,9 @@ class AutoCrawler:
             dir_name = '{}/{}'.format(self.download_path, keyword)
             google_done = os.path.exists(os.path.join(os.getcwd(), dir_name, 'google_done'))
             naver_done = os.path.exists(os.path.join(os.getcwd(), dir_name, 'naver_done'))
-            if google_done and naver_done and self.skip:
+            bing_done = os.path.exists(os.path.join(os.getcwd(), dir_name, 'bing_done'))
+            pexels_done = os.path.exists(os.path.join(os.getcwd(), dir_name, 'pexels_done'))
+            if google_done and naver_done and bing_done and pexels_done and self.skip:
                 print('Skipping done task {}'.format(dir_name))
                 continue
 
@@ -290,6 +322,18 @@ class AutoCrawler:
                     tasks.append([keyword, Sites.NAVER_FULL])
                 else:
                     tasks.append([keyword, Sites.NAVER])
+
+            if self.do_bing and not bing_done:
+                if self.full_resolution:
+                    tasks.append([keyword, Sites.BING_FULL])
+                else:
+                    tasks.append([keyword, Sites.BING])
+
+            if self.do_pexels and not pexels_done:
+                if self.full_resolution:
+                    tasks.append([keyword, Sites.PEXELS_FULL])
+                else:
+                    tasks.append([keyword, Sites.PEXELS])
 
         try:
             pool = Pool(self.n_threads, initializer=self.init_worker)
@@ -357,6 +401,8 @@ if __name__ == '__main__':
     parser.add_argument('--threads', type=int, default=4, help='Number of threads to download.')
     parser.add_argument('--google', type=str, default='true', help='Download from google.com (boolean)')
     parser.add_argument('--naver', type=str, default='true', help='Download from naver.com (boolean)')
+    parser.add_argument('--bing', type=str, default='true', help='Download from bing.com (boolean)')
+    parser.add_argument('--pexels', type=str, default='true', help='Download from pexels.com (boolean)')
     parser.add_argument('--full', type=str, default='false',
                         help='Download full resolution image instead of thumbnails (slow)')
     parser.add_argument('--face', type=str, default='false', help='Face search mode')
@@ -375,6 +421,8 @@ if __name__ == '__main__':
     _threads = args.threads
     _google = False if str(args.google).lower() == 'false' else True
     _naver = False if str(args.naver).lower() == 'false' else True
+    _bing = False if str(args.bing).lower() == 'false' else True
+    _pexels = False if str(args.pexels).lower() == 'false' else True
     _full = False if str(args.full).lower() == 'false' else True
     _face = False if str(args.face).lower() == 'false' else True
     _limit = int(args.limit)
@@ -389,10 +437,10 @@ if __name__ == '__main__':
         _no_gui = False
 
     print(
-        'Options - skip:{}, threads:{}, google:{}, naver:{}, full_resolution:{}, face:{}, no_gui:{}, limit:{}, _proxy_list:{}'
-            .format(_skip, _threads, _google, _naver, _full, _face, _no_gui, _limit, _proxy_list))
+        'Options - skip:{}, threads:{}, google:{}, naver:{},  bing:{},  pexels:{}, full_resolution:{}, face:{}, no_gui:{}, limit:{}, _proxy_list:{}'
+            .format(_skip, _threads, _google, _naver, _bing, _pexels, _full, _face, _no_gui, _limit, _proxy_list))
 
     crawler = AutoCrawler(skip_already_exist=_skip, n_threads=_threads,
-                          do_google=_google, do_naver=_naver, full_resolution=_full,
+                          do_google=_google, do_naver=_naver, do_bing=_bing, do_pexels=_pexels, full_resolution=_full,
                           face=_face, no_gui=_no_gui, limit=_limit, proxy_list=_proxy_list)
     crawler.do_crawling()

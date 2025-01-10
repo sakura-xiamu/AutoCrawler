@@ -452,7 +452,7 @@ class CollectLinks:
         filtered_links = filter.filter_links(links)
         return filtered_links
 
-    def bing_full(self, keyword, add_url=""):
+    def bing_full(self, keyword, add_url="", limit=100):
         print('[Full Resolution Mode]')
 
         self.browser.get(
@@ -507,7 +507,7 @@ class CollectLinks:
         filtered_links = filter.filter_links(links)
         return filtered_links
 
-    def pexels_full(self, keyword, add_url=""):
+    def pexels_full(self, keyword, add_url="", limit=100):
         self.browser.get(
             "https://www.pexels.com/search/{}{}".format(keyword, add_url))
 
