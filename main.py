@@ -282,6 +282,8 @@ class AutoCrawler:
 
             print('Downloading images from collected links... {} from {}'.format(keyword, site_name))
             txt_file_path = '{}/{}/{}/{}.txt'.format(self.download_path, 'images_url', site_name, keyword.replace('"', '').replace(' ', '_'))
+            # 确保文件夹路径存在
+            os.makedirs(os.path.dirname(txt_file_path), exist_ok=True)
             # 打开文件，以追加模式（'a'）打开文件
             with open(txt_file_path, "a", encoding="utf-8") as file:
                 for line in links:
@@ -353,9 +355,46 @@ class AutoCrawler:
             pool.join()
         print('Task ended. Pool join.')
 
-        self.imbalance_check()
+        # 指定文件夹路径
+        folder_path = '{}/{}'.format(self.download_path, 'images_url')  # 替换为你的文件夹路径
+        self.remove_duplicates_across_files(folder_path)
+
+        #self.imbalance_check()
 
         print('End Program')
+
+    def remove_duplicates_across_files(self, folder_path):
+        # 用于存储所有文件中的唯一行
+        unique_lines = set()
+        file_line_map = {}  # 记录每个文件对应的去重后的行
+
+        # 遍历文件夹及其子文件夹
+        for root, _, files in os.walk(folder_path):
+            for filename in files:
+                if filename.endswith(".txt"):  # 只处理 .txt 文件
+                    file_path = os.path.join(root, filename)
+
+                    # 读取文件内容
+                    with open(file_path, "r", encoding="utf-8") as file:
+                        lines = file.readlines()
+
+                    # 去重并更新全局唯一行集合
+                    file_unique_lines = []
+                    for line in lines:
+                        stripped_line = line.strip()  # 去掉行首尾空白符
+                        if stripped_line not in unique_lines:  # 如果是新行
+                            unique_lines.add(stripped_line)
+                            file_unique_lines.append(stripped_line)
+
+                    # 保存每个文件去重后的内容
+                    file_line_map[file_path] = file_unique_lines
+
+        # 写回文件
+        for file_path, lines in file_line_map.items():
+            with open(file_path, "w", encoding="utf-8") as file:
+                for line in lines:
+                    file.write(line + "\n")
+            print(f"文件 {file_path} 已处理完成，去重后的行数为 {len(lines)}。")
 
     def imbalance_check(self):
         print('Data imbalance checking...')
