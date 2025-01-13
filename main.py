@@ -69,7 +69,8 @@ class Sites:
 
 
 class AutoCrawler:
-    def __init__(self, skip_already_exist=True, n_threads=8, do_google=True, do_naver=True, do_bing=True, do_pexels=True, download_path='download',
+    def __init__(self, skip_already_exist=True, n_threads=8, do_google=True, do_naver=True, do_bing=True,
+                 do_pexels=True, download_path='download',
                  full_resolution=False, face=False, no_gui=False, limit=0, proxy_list=None):
         """
         :param skip_already_exist: Skips keyword already downloaded before. This is needed when re-downloading.
@@ -148,9 +149,9 @@ class AutoCrawler:
             os.makedirs(path)
 
     @staticmethod
-    def get_keywords(keywords_file='keywords.txt'):
+    def get_keywords(keywords_file='datasets_keywords\{}.txt', site_name='all'):
         # read search keywords from file
-        with open(keywords_file, 'r', encoding='utf-8-sig') as f:
+        with open(keywords_file.format(site_name), 'r', encoding='utf-8-sig') as f:
             text = f.read()
             lines = text.split('\n')
             lines = filter(lambda x: x != '' and x is not None, lines)
@@ -159,9 +160,9 @@ class AutoCrawler:
         print('{} keywords found: {}'.format(len(keywords), keywords))
 
         # re-save sorted keywords
-        with open(keywords_file, 'w+', encoding='utf-8') as f:
-            for keyword in keywords:
-                f.write('{}\n'.format(keyword))
+        # with open(keywords_file, 'w+', encoding='utf-8') as f:
+        #    for keyword in keywords:
+        #        f.write('{}\n'.format(keyword))
 
         return keywords
 
@@ -231,7 +232,7 @@ class AutoCrawler:
 
             except KeyboardInterrupt:
                 break
-                        
+
             except Exception as e:
                 print('Download failed - ', e)
                 continue
@@ -281,7 +282,8 @@ class AutoCrawler:
                 links = []
 
             print('Downloading images from collected links... {} from {}'.format(keyword, site_name))
-            txt_file_path = '{}/{}/{}/{}.txt'.format(self.download_path, 'images_url', site_name, keyword.replace('"', '').replace(' ', '_'))
+            txt_file_path = '{}/{}/{}/{}.txt'.format(self.download_path, 'images_url', site_name,
+                                                     keyword.replace('"', '').replace(' ', '_'))
             # 确保文件夹路径存在
             os.makedirs(os.path.dirname(txt_file_path), exist_ok=True)
             # 打开文件，以追加模式（'a'）打开文件
@@ -289,9 +291,9 @@ class AutoCrawler:
                 for line in links:
                     file.write(line + "\n")  # 每行写入后加一个换行符
 
-            #print('Downloading images from collected links... {} from {}'.format(keyword, site_name))
-            #self.download_images(keyword, links, site_name, max_count=self.limit)
-            #Path('{}/{}/{}_done'.format(self.download_path, keyword.replace('"', ''), site_name)).touch()
+            # print('Downloading images from collected links... {} from {}'.format(keyword, site_name))
+            # self.download_images(keyword, links, site_name, max_count=self.limit)
+            # Path('{}/{}/{}_done'.format(self.download_path, keyword.replace('"', ''), site_name)).touch()
 
             print('Done write image url  {} : {}'.format(site_name, keyword))
 
@@ -304,45 +306,73 @@ class AutoCrawler:
 
     def init_worker(self):
         signal.signal(signal.SIGINT, signal.SIG_IGN)
-        
-    def do_crawling(self):
-        keywords = self.get_keywords()
 
+    def do_crawling(self):
         tasks = []
 
-        for keyword in keywords:
-            dir_name = '{}/{}'.format(self.download_path, keyword)
-            google_done = os.path.exists(os.path.join(os.getcwd(), dir_name, 'google_done'))
-            naver_done = os.path.exists(os.path.join(os.getcwd(), dir_name, 'naver_done'))
-            bing_done = os.path.exists(os.path.join(os.getcwd(), dir_name, 'bing_done'))
-            pexels_done = os.path.exists(os.path.join(os.getcwd(), dir_name, 'pexels_done'))
-            if google_done and naver_done and bing_done and pexels_done and self.skip:
-                print('Skipping done task {}'.format(dir_name))
-                continue
+        site_name = Sites.get_text(Sites.GOOGLE)
+        keywords = self.get_keywords(site_name=site_name)
+        if keywords:
+            for keyword in keywords:
+                dir_name = '{}/images_file/{}/{}'.format(self.download_path, site_name, keyword)
+                google_done = os.path.exists(os.path.join(os.getcwd(), dir_name, 'google_done'))
+                if google_done and self.skip:
+                    print('Skipping done task {}'.format(dir_name))
+                    continue
 
-            if self.do_google and not google_done:
-                if self.full_resolution:
-                    tasks.append([keyword, Sites.GOOGLE_FULL])
-                else:
-                    tasks.append([keyword, Sites.GOOGLE])
+                if self.do_google and not google_done:
+                    if self.full_resolution:
+                        tasks.append([keyword, Sites.GOOGLE_FULL])
+                    else:
+                        tasks.append([keyword, Sites.GOOGLE])
 
-            if self.do_naver and not naver_done:
-                if self.full_resolution:
-                    tasks.append([keyword, Sites.NAVER_FULL])
-                else:
-                    tasks.append([keyword, Sites.NAVER])
+        site_name = Sites.get_text(Sites.BING)
+        keywords = self.get_keywords(site_name=site_name)
+        if keywords:
+            for keyword in keywords:
+                dir_name = '{}/images_file/{}/{}'.format(self.download_path, site_name, keyword)
+                bing_done = os.path.exists(os.path.join(os.getcwd(), dir_name, 'bing_done'))
+                if bing_done and self.skip:
+                    print('Skipping done task {}'.format(dir_name))
+                    continue
 
-            if self.do_bing and not bing_done:
-                if self.full_resolution:
-                    tasks.append([keyword, Sites.BING_FULL])
-                else:
-                    tasks.append([keyword, Sites.BING])
+                if self.do_bing and not bing_done:
+                    if self.full_resolution:
+                        tasks.append([keyword, Sites.BING_FULL])
+                    else:
+                        tasks.append([keyword, Sites.BING])
 
-            if self.do_pexels and not pexels_done:
-                if self.full_resolution:
-                    tasks.append([keyword, Sites.PEXELS_FULL])
-                else:
-                    tasks.append([keyword, Sites.PEXELS])
+        site_name = Sites.get_text(Sites.PEXELS)
+        keywords = self.get_keywords(site_name=site_name)
+        if keywords:
+            for keyword in keywords:
+                dir_name = '{}/images_file/{}/{}'.format(self.download_path, site_name, keyword)
+                pexels_done = os.path.exists(os.path.join(os.getcwd(), dir_name, 'pexels_done'))
+                if pexels_done and self.skip:
+                    print('Skipping done task {}'.format(dir_name))
+                    continue
+
+                if self.do_pexels and not pexels_done:
+                    if self.full_resolution:
+                        tasks.append([keyword, Sites.PEXELS_FULL])
+                    else:
+                        tasks.append([keyword, Sites.PEXELS])
+
+        site_name = Sites.get_text(Sites.NAVER)
+        keywords = self.get_keywords(site_name=site_name)
+        if keywords:
+            for keyword in keywords:
+                dir_name = '{}/images_file/{}/{}'.format(self.download_path, site_name, keyword)
+                naver_done = os.path.exists(os.path.join(os.getcwd(), dir_name, 'naver_done'))
+                if naver_done and self.skip:
+                    print('Skipping done task {}'.format(dir_name))
+                    continue
+
+                if self.do_naver and not naver_done:
+                    if self.full_resolution:
+                        tasks.append([keyword, Sites.NAVER_FULL])
+                    else:
+                        tasks.append([keyword, Sites.NAVER])
 
         try:
             pool = Pool(self.n_threads, initializer=self.init_worker)
@@ -356,10 +386,10 @@ class AutoCrawler:
         print('Task ended. Pool join.')
 
         # 指定文件夹路径
-        folder_path = '{}/{}'.format(self.download_path, 'images_url')  # 替换为你的文件夹路径
+        folder_path = '{}\{}'.format(self.download_path, 'images_url')  # 替换为你的文件夹路径
         self.remove_duplicates_across_files(folder_path)
 
-        #self.imbalance_check()
+        # self.imbalance_check()
 
         print('End Program')
 
@@ -484,7 +514,7 @@ if __name__ == '__main__':
 
     print(
         'Options - skip:{}, threads:{}, google:{}, naver:{},  bing:{},  pexels:{}, full_resolution:{}, face:{}, no_gui:{}, limit:{}, _proxy_list:{}'
-            .format(_skip, _threads, _google, _naver, _bing, _pexels, _full, _face, _no_gui, _limit, _proxy_list))
+        .format(_skip, _threads, _google, _naver, _bing, _pexels, _full, _face, _no_gui, _limit, _proxy_list))
 
     crawler = AutoCrawler(skip_already_exist=_skip, n_threads=_threads,
                           do_google=_google, do_naver=_naver, do_bing=_bing, do_pexels=_pexels, full_resolution=_full,
