@@ -522,14 +522,12 @@ class CollectLinks:
 
         elem = self.browser.find_element(By.TAG_NAME, "body")
 
+        count = 0
         for i in range(200):
             elem.send_keys(Keys.PAGE_DOWN)
             time.sleep(1)
-            if i % 2 == 0 :
+            if i % 3 == 0 :
                 elem.send_keys(Keys.PAGE_UP)
-            if i % 10 == 0 :
-                for j in range(10):
-                    elem.send_keys(Keys.PAGE_UP)
 
             # 执行 JavaScript 获取页面滚动信息
             scroll_info = self.browser.execute_script(
@@ -544,8 +542,25 @@ class CollectLinks:
             # 判断是否到底部
             if is_scroll_end :
                 print("已经滚动到底部")
-                time.sleep(2)
-                self.wait_and_click('//button[@class="Button_button__RDDf5 spacing_noMargin__F5u9R spacing_pr30__J0kZ7 spacing_pl30__01iHm Grid_loadMore__hTWju Button_clickable__DqoNe Button_color-white__Wmgol"]')
+                elem.send_keys(Keys.PAGE_UP)
+                # 执行 JavaScript 获取页面滚动信息
+                scroll_info = self.browser.execute_script(
+                    "return {"
+                    "    scrollTop: document.documentElement.scrollTop || document.body.scrollTop,"
+                    "    clientHeight: document.documentElement.clientHeight || window.innerHeight,"
+                    "    scrollHeight: document.documentElement.scrollHeight || document.body.scrollHeight"
+                    "};"
+                )
+                # 判断是否到底部
+                is_scroll_end = scroll_info['scrollTop'] + scroll_info['clientHeight'] >= scroll_info['scrollHeight']
+                if is_scroll_end :
+                    time.sleep(2)
+                    elem.send_keys(Keys.PAGE_UP)
+
+                    count += 0
+                    if count > 5:
+                        break
+                    #self.wait_and_click('//button[@class="Button_button__RDDf5 spacing_noMargin__F5u9R spacing_pr30__J0kZ7 spacing_pl30__01iHm Grid_loadMore__hTWju Button_clickable__DqoNe Button_color-white__Wmgol"]')
 
         imgs = self.browser.find_elements(By.XPATH, '//a//img[@class="spacing_noMargin__F5u9R"]')
 
@@ -566,8 +581,7 @@ class CollectLinks:
         print('Collect links done. Site: {}, Keyword: {}, Total: {}'.format('pexels', keyword, len(links)))
         self.browser.close()
 
-        filter = LinkFilter()
-        filtered_links = filter.filter_links(links)
+        filtered_links = self.filter.filter_links(links)
         return filtered_links
 
     def is_scroll_end(self):
