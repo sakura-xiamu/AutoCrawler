@@ -25,7 +25,7 @@ from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
 import json
-
+from urllib.parse import urlparse, parse_qs, unquote, urlunparse
 from LinkFilter import LinkFilter
 
 
@@ -155,6 +155,10 @@ class CollectLinks:
         for i in range(60):
             elem.send_keys(Keys.PAGE_DOWN)
             time.sleep(0.2)
+            if self.is_scroll_end:
+                # 如果触底了就暂停5秒
+                print('naver触底暂停')
+                time.sleep(5)
 
         imgs = self.browser.find_elements(By.XPATH, '//div[@class="tile_item _fe_image_tab_content_tile"]//img[@class="_fe_image_tab_content_thumbnail_image"]')
 
@@ -166,7 +170,18 @@ class CollectLinks:
             try:
                 src = img.get_attribute("src")
                 if src[0] != 'd':
-                    links.append(src)
+                    new_url = unquote(src)
+                    query = urlparse(new_url).query
+                    # 解析查询参数
+                    params = parse_qs(query)
+                    # 解析 URL
+                    parsed_url = urlparse(params['src'][0])
+                    # 去掉查询参数和片段
+                    new_url = urlunparse((parsed_url.scheme, parsed_url.netloc, parsed_url.path, '', '', ''))
+                    is_subdomain = self.is_subdomain(new_url, 'pexels.com')
+                    if is_subdomain:
+                        new_url += '?auto=compress&cs=tinysrgb&dpr=1&w=640&h=640'
+                    links.append(new_url)
             except Exception as e:
                 print('[Exception occurred while collecting links from naver] {}'.format(e))
 
@@ -389,65 +404,7 @@ class CollectLinks:
     def naver_full(self, keyword, add_url=""):
         print('[Full Resolution Mode]')
 
-        self.browser.get(
-            "https://search.naver.com/search.naver?where=image&sm=tab_jum&query={}{}".format(keyword, add_url))
-        time.sleep(1)
-
-        elem = self.browser.find_element(By.TAG_NAME, "body")
-
-        print('Scraping links')
-
-        # Click the first image
-        self.wait_and_click('//div[@class="tile_item _fe_image_tab_content_tile"]//img[@class="_fe_image_tab_content_thumbnail_image"]')
-        time.sleep(1)
-
-        links = []
-        count = 1
-
-        last_scroll = 0
-        scroll_patience = 0
-
-        while True:
-            try:
-                xpath = '//img[@class="_fe_image_viewer_image_fallback_target _fe_image_viewer_main_image"]'
-                imgs = self.browser.find_elements(By.XPATH, xpath)
-
-                for img in imgs:
-                    self.highlight(img)
-                    src = img.get_attribute('src')
-                    print('图片src={}'.format(src))
-
-                    if src not in links and src is not None:
-                        links.append(src)
-                        print('%d: %s' % (count, src))
-                        count += 1
-
-            except StaleElementReferenceException:
-                # print('[Expected Exception - StaleElementReferenceException]')
-                pass
-            except Exception as e:
-                print('[Exception occurred while collecting links from naver_full] {}'.format(e))
-
-            scroll = self.get_scroll()
-            if scroll == last_scroll:
-                scroll_patience += 1
-            else:
-                scroll_patience = 0
-                last_scroll = scroll
-
-            if scroll_patience >= 100:
-                break
-
-            elem.send_keys(Keys.RIGHT)
-
-        links = self.remove_duplicates(links)
-
-        print('Collect links done. Site: {}, Keyword: {}, Total: {}'.format('naver_full', keyword, len(links)))
-        self.browser.close()
-
-        filter = LinkFilter()
-        filtered_links = filter.filter_links(links)
-        return filtered_links
+        return self.naver(keyword, add_url)
 
     def bing_full(self, keyword, add_url="", limit=100):
         print('[Full Resolution Mode]')
@@ -518,6 +475,17 @@ class CollectLinks:
         # 判断是否到底部
         is_scroll_end = scroll_info['scrollTop'] + scroll_info['clientHeight'] >= scroll_info['scrollHeight']
         return is_scroll_end
+
+    def is_subdomain(self, url, root_domain):
+        try:
+            # 解析 URL
+            parsed_url = urlparse(url)
+            hostname = parsed_url.hostname
+            # 检查是否以指定的根域名结尾
+            return hostname.endswith(f".{root_domain}") or hostname == root_domain
+        except Exception as e:
+            print(f"解析 URL 出错: {e}")
+            return False
 
 if __name__ == '__main__':
     collect = CollectLinks()
