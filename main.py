@@ -281,10 +281,17 @@ class AutoCrawler:
                 links = []
 
             print('Downloading images from collected links... {} from {}'.format(keyword, site_name))
-            self.download_images(keyword, links, site_name, max_count=self.limit)
-            Path('{}/{}/{}_done'.format(self.download_path, keyword.replace('"', ''), site_name)).touch()
+            txt_file_path = '{}/{}/{}/{}.txt'.format(self.download_path, 'images_url', site_name, keyword.replace('"', '').replace(' ', '_'))
+            # 打开文件，以追加模式（'a'）打开文件
+            with open(txt_file_path, "a", encoding="utf-8") as file:
+                for line in links:
+                    file.write(line + "\n")  # 每行写入后加一个换行符
 
-            print('Done {} : {}'.format(site_name, keyword))
+            #print('Downloading images from collected links... {} from {}'.format(keyword, site_name))
+            #self.download_images(keyword, links, site_name, max_count=self.limit)
+            #Path('{}/{}/{}_done'.format(self.download_path, keyword.replace('"', ''), site_name)).touch()
+
+            print('Done write image url  {} : {}'.format(site_name, keyword))
 
         except Exception as e:
             print('Exception {}:{} - {}'.format(site_name, keyword, e))
