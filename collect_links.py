@@ -26,7 +26,10 @@ from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
 import json
 from urllib.parse import urlparse, parse_qs, unquote, urlunparse
+
+from ElementMover import ElementMover
 from LinkFilter import LinkFilter
+from ScrollDetector import ScrollDetector
 
 
 class CollectLinks:
@@ -41,6 +44,8 @@ class CollectLinks:
         self.browser = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=chrome_options)
         self.filter = LinkFilter()
         self.wait = WebDriverWait(self.browser, 5)  # 创建一个等待实例
+        self.mover = ElementMover(self.browser)
+        self.scroll_detector = ScrollDetector(self.browser)
 
         browser_version = 'Failed to detect version'
         chromedriver_version = 'Failed to detect version'
@@ -181,7 +186,7 @@ class CollectLinks:
                     new_url = urlunparse((parsed_url.scheme, parsed_url.netloc, parsed_url.path, '', '', ''))
                     is_subdomain = self.is_subdomain(new_url, 'pexels.com')
                     if is_subdomain:
-                        new_url += '?auto=compress&cs=tinysrgb&dpr=1&w=640&h=640'
+                        new_url += '?auto=compress&cs=tinysrgb&dpr=1&w=1280&h=720'
                     links.append(new_url)
             except Exception as e:
                 print('[Exception occurred while collecting links from naver] {}'.format(e))
@@ -274,7 +279,7 @@ class CollectLinks:
         elem = self.browser.find_element(By.TAG_NAME, "body")
 
         count = 0
-        for i in range(200):
+        for i in range(300):
             elem.send_keys(Keys.PAGE_DOWN)
             time.sleep(1)
             #if i % 3 == 0 :
@@ -301,7 +306,6 @@ class CollectLinks:
                         break
                 else:
                     count = 0
-                    #self.wait_and_click('//button[@class="Button_button__RDDf5 spacing_noMargin__F5u9R spacing_pr30__J0kZ7 spacing_pl30__01iHm Grid_loadMore__hTWju Button_clickable__DqoNe Button_color-white__Wmgol"]')
 
         imgs = self.browser.find_elements(By.XPATH, '//a//img[@class="spacing_noMargin__F5u9R"]')
 
@@ -314,7 +318,7 @@ class CollectLinks:
                 src = img.get_attribute("src")
                 if src:
                     # 替换 w=500 为 w=640
-                    new_url = src.replace("w=500", "w=640&h=640")
+                    new_url = src.replace("w=500", "w=1280&h=720")
                     links.append(new_url)
             except Exception as e:
                 print('[Exception occurred while collecting links from pexels] {}'.format(e))
@@ -379,7 +383,7 @@ class CollectLinks:
                         # 去掉查询参数和片段
                         is_subdomain = self.is_subdomain(src, 'pexels.com')
                         if is_subdomain:
-                            src = src.replace("w=500", "w=640&h=640")
+                            src = src.replace("w=500", "w=1280&h=720")
                         links.append(src)
                         print('%d: %s' % (count, src))
                         count += 1
@@ -458,7 +462,7 @@ class CollectLinks:
                             # 去掉查询参数和片段
                             is_subdomain = self.is_subdomain(src, 'pexels.com')
                             if is_subdomain:
-                                src = src.replace("w=500", "w=640&h=640")
+                                src = src.replace("w=500", "w=1280&h=720")
                             links.append(src)
                     except Exception as e:
                         print('[Exception occurred while collecting links from bing_full] {}'.format(e))
