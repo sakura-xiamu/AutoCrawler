@@ -368,6 +368,10 @@ class CollectLinks:
                     src = imgs[0].get_attribute('src')
 
                     if src is not None and src not in links:
+                        # 去掉查询参数和片段
+                        is_subdomain = self.is_subdomain(src, 'pexels.com')
+                        if is_subdomain:
+                            src = src.replace("w=500", "w=640&h=640")
                         links.append(src)
                         print('%d: %s' % (count, src))
                         count += 1
@@ -438,7 +442,12 @@ class CollectLinks:
                         attr_m = img.get_attribute("data-m")
                         if attr_m:
                             json_m = json.loads(attr_m)
-                            links.append(json_m['murl'])
+                            src = json_m['murl']
+                            # 去掉查询参数和片段
+                            is_subdomain = self.is_subdomain(src, 'pexels.com')
+                            if is_subdomain:
+                                src = src.replace("w=500", "w=640&h=640")
+                            links.append(src)
                     except Exception as e:
                         print('[Exception occurred while collecting links from bing_full] {}'.format(e))
 
