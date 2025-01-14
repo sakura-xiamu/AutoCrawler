@@ -18,7 +18,7 @@ import time
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.by import By
-from selenium.common.exceptions import ElementNotVisibleException, StaleElementReferenceException
+from selenium.common.exceptions import ElementNotVisibleException, StaleElementReferenceException, TimeoutException
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.chrome.options import Options
@@ -40,7 +40,8 @@ class CollectLinks:
             chrome_options.add_argument("--proxy-server={}".format(proxy))
         self.browser = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=chrome_options)
         self.filter = LinkFilter()
-        
+        self.wait = WebDriverWait(self.browser, 5)  # 创建一个等待实例
+
         browser_version = 'Failed to detect version'
         chromedriver_version = 'Failed to detect version'
         major_version_different = False
@@ -346,6 +347,7 @@ class CollectLinks:
         last_scroll = 0
         scroll_patience = 0
         NUM_MAX_SCROLL_PATIENCE = 100
+        break_count = 0
 
         while len(links) < limit:
             try:
@@ -357,11 +359,17 @@ class CollectLinks:
                     imgs = body.find_elements(By.XPATH, xpath)
                     t2 = time.time()
                     if len(imgs) > 0:
+                        break_count += 1
                         break
                     if t2 - t1 > 5:
                         print(f"Failed to locate image by XPATH: {xpath}")
+                        break_count += 1
                         break
                     time.sleep(0.1)
+                    break_count = 0
+
+                if break_count > 20:
+                    break
 
                 if len(imgs) > 0:
                     self.highlight(imgs[0])
@@ -383,6 +391,10 @@ class CollectLinks:
                 pass
             except Exception as e:
                 print('[Exception occurred while collecting links from google_full] {}'.format(e))
+
+            if self.is_scroll_end():
+                print('google_full is_scroll_end break')
+                break
 
             scroll = self.get_scroll()
             if scroll == last_scroll:
