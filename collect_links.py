@@ -455,6 +455,7 @@ class CollectLinks:
 
                 self.browser.switch_to.default_content()
                 elem.send_keys(Keys.ARROW_RIGHT)
+                time.sleep(5)
             except StaleElementReferenceException:
                 # print('[Expected Exception - StaleElementReferenceException]')
                 pass
