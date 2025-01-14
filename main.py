@@ -320,6 +320,9 @@ class AutoCrawler:
                     print('Skipping done task {}'.format(dir_name))
                     continue
 
+                if self.is_keywords_skip(site_name, keyword):
+                    continue
+
                 if self.do_google and not google_done:
                     if self.full_resolution:
                         tasks.append([keyword, Sites.GOOGLE_FULL])
@@ -334,6 +337,9 @@ class AutoCrawler:
                 bing_done = os.path.exists(os.path.join(os.getcwd(), dir_name, 'bing_done'))
                 if bing_done and self.skip:
                     print('Skipping done task {}'.format(dir_name))
+                    continue
+
+                if self.is_keywords_skip(site_name, keyword):
                     continue
 
                 if self.do_bing and not bing_done:
@@ -352,6 +358,9 @@ class AutoCrawler:
                     print('Skipping done task {}'.format(dir_name))
                     continue
 
+                if self.is_keywords_skip(site_name, keyword):
+                    continue
+
                 if self.do_pexels and not pexels_done:
                     if self.full_resolution:
                         tasks.append([keyword, Sites.PEXELS_FULL])
@@ -366,6 +375,9 @@ class AutoCrawler:
                 naver_done = os.path.exists(os.path.join(os.getcwd(), dir_name, 'naver_done'))
                 if naver_done and self.skip:
                     print('Skipping done task {}'.format(dir_name))
+                    continue
+
+                if self.is_keywords_skip(site_name, keyword):
                     continue
 
                 if self.do_naver and not naver_done:
@@ -469,6 +481,10 @@ class AutoCrawler:
         else:
             print('Data imbalance not detected.')
 
+    def is_keywords_skip(self, site_name, keyword):
+        txt_file_path = '{}/{}/{}/{}.txt'.format(self.download_path, 'images_url', site_name,
+                                                 keyword.replace('"', '').replace(' ', '_'))
+        return os.path.exists(txt_file_path)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
