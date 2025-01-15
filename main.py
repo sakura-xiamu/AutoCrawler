@@ -214,7 +214,7 @@ class AutoCrawler:
                 no_ext_path = '{}/{}/{}_{}'.format(self.download_path.replace('"', ''), keyword, site_name,
                                                    str(index).zfill(4))
                 path = no_ext_path + '.' + ext
-                self.save_object_to_file(response, path, is_base64=is_base64)
+                self.save_object_to_file(response, path.lower(), is_base64=is_base64)
 
                 success_count += 1
                 del response
